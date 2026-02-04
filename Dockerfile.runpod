@@ -1,31 +1,25 @@
 FROM runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04
-                                       
-  WORKDIR /app                    
-                                  
-  # Install system dependencies      
+                                                                                                                          
+  WORKDIR /app                                                               
+
   RUN apt-get update && apt-get install -y \
-      git \                  
-      ffmpeg \               
-      curl \                
+      git \
+      ffmpeg \
+      curl \
       && rm -rf /var/lib/apt/lists/*
 
-  # Install uv package manager                                                                                            
   RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-  ENV PATH="/root/.local/bin:$PATH"                                                                                       
-                                                                             
-  # Clone ACE-Step 1.5
+  ENV PATH="/root/.local/bin:$PATH"
+
   RUN git clone https://github.com/ACE-Step/ACE-Step-1.5.git .
 
-  # Install dependencies using uv
   RUN uv sync
 
-  # Install runpod
   RUN uv pip install runpod
 
-  # Pre-download models (baked into image for faster cold starts)
-  RUN uv run python -m acestep.model_downloader --download-source huggingface
+  # Download models (remove --download-source flag)
+  RUN uv run python -m acestep.model_downloader
 
-  # Copy handler
   COPY handler.py /app/handler.py
 
   CMD ["uv", "run", "python", "/app/handler.py"]
